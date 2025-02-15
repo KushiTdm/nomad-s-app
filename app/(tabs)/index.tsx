@@ -14,12 +14,24 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { fetchCountries } from '../../services/supabaseService';
 
+const categories = [
+  { id: 'visa-free', label: 'Visa-Free' },
+  { id: 'budget', label: 'Budget' },
+  { id: 'safe', label: 'Safe' },
+  { id: 'beach', label: 'Beach' },
+  { id: 'mountains', label: 'Mountains' },
+  { id: 'culture', label: 'Culture' },
+  { id: 'health', label: 'Health' },
+  { id: 'payment-methods', label: 'Payment Methods' },
+];
+
 export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [countries, setCountries] = useState([]);
   const [filteredCountries, setFilteredCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeFilter, setActiveFilter] = useState(null);
 
   useEffect(() => {
     loadCountries();
@@ -39,6 +51,7 @@ export default function ExploreScreen() {
   const loadCountries = async () => {
     try {
       const data = await fetchCountries();
+      console.log('Fetched countries with entry requirements:', data);
       setCountries(data);
       setFilteredCountries(data);
     } catch (error) {
@@ -50,6 +63,62 @@ export default function ExploreScreen() {
 
   const handleCountryPress = (countryId) => {
     router.push(`/(tabs)/${countryId}`);
+  };
+
+  const filterCountries = (categoryId) => {
+    setActiveFilter(categoryId);
+
+    switch (categoryId) {
+  case 'visa-free':
+  setFilteredCountries(countries.filter(country => 
+    country.entry_requirements?.some(req => req.visa_required === false)
+  )); // Ajoutez cette parenthèse fermante
+  break;
+      case 'budget':
+        setFilteredCountries(countries.filter(country => {
+          const budget = country.estimated_budget?.[0];
+          return (
+            budget?.accommodation === 'Low' ||
+            budget?.transport === 'Low' ||
+            budget?.meals === 'Low'
+          );
+        }));
+        break;
+      case 'safe':
+        setFilteredCountries(countries.filter(country => {
+          const alerts = country.real_time_alerts?.[0];
+          return (
+            alerts?.political_risks === 'Low' &&
+            alerts?.health_risks === 'Low'
+          );
+        }));
+        break;
+      case 'beach':
+        setFilteredCountries(countries.filter(country => country.climate === 'Tropical'));
+        break;
+      case 'mountains':
+        setFilteredCountries(countries.filter(country => country.climate === 'Mountainous'));
+        break;
+      case 'culture':
+        setFilteredCountries(countries.filter(country => 
+          country.local_laws_customs?.[0]?.main_rules?.includes('Cultural')
+        ));
+        break;
+      case 'health':
+        setFilteredCountries(countries.filter(country => 
+          country.vaccines?.some(vaccine => vaccine.type === 'mandatory')
+        ));
+        break;
+      case 'payment-methods':
+        setFilteredCountries(countries.filter(country => 
+          country.payment_methods?.credit_card === true ||
+          country.payment_methods?.apple_pay === true
+        ));
+        break;
+      default:
+        setFilteredCountries(countries);
+        break;
+    }
   };
 
   if (loading) {
@@ -73,7 +142,6 @@ export default function ExploreScreen() {
       </View>
 
       {error && <Text style={styles.error}>{error}</Text>}
-      }
 
       <Text style={styles.sectionTitle}>Featured Destinations</Text>
       <ScrollView
@@ -101,13 +169,22 @@ export default function ExploreScreen() {
 
       <Text style={styles.sectionTitle}>Popular Categories</Text>
       <View style={styles.categoriesGrid}>
-        {['Visa-Free', 'Budget', 'Beach', 'Mountains', 'Cities', 'Culture'].map(
-          (category) => (
-            <TouchableOpacity key={category} style={styles.categoryCard}>
-              <Text style={styles.categoryText}>{category}</Text>
-            </TouchableOpacity>
-          )
-        )}
+        {categories.map((category) => (
+          <TouchableOpacity
+            key={category.id}
+            style={[
+              styles.categoryCard,
+              activeFilter === category.id && styles.activeCategoryCard,
+            ]}
+            onPress={() => filterCountries(category.id)}>
+            <Text style={[
+              styles.categoryText,
+              activeFilter === category.id && styles.activeCategoryText,
+            ]}>
+              {category.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </ScrollView>
   );
@@ -235,9 +312,15 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  activeCategoryCard: {
+    backgroundColor: '#2563eb',
+  },
   categoryText: {
     fontSize: 14,
     fontWeight: '500',
     color: '#0f172a',
+  },
+  activeCategoryText: {
+    color: '#fff',
   },
 });

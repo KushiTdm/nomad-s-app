@@ -119,7 +119,6 @@ export default function ProfileScreen() {
       </View>
 
       {error && <Text style={styles.error}>{error}</Text>}
-      }
 
       {isEditing ? (
         <View style={styles.form}>
