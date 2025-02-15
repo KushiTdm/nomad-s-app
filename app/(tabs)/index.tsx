@@ -62,18 +62,18 @@ export default function ExploreScreen() {
   };
 
   const handleCountryPress = (countryId) => {
-    router.push(`/(tabs)/${countryId}`);
+    router.push(`/(details)/${countryId}`);
   };
 
   const filterCountries = (categoryId) => {
     setActiveFilter(categoryId);
 
     switch (categoryId) {
-  case 'visa-free':
-  setFilteredCountries(countries.filter(country => 
-    country.entry_requirements?.some(req => req.visa_required === false)
-  )); // Ajoutez cette parenthèse fermante
-  break;
+      case 'visa-free':
+        setFilteredCountries(countries.filter(country => 
+          country.entry_requirements?.some(req => req.visa_required === false)
+        ));
+        break;
       case 'budget':
         setFilteredCountries(countries.filter(country => {
           const budget = country.estimated_budget?.[0];
